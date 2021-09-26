@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"time"
 
 	simpleTcpMessage "github.com/daniilpeshkov/go-simple-tcp-message"
 	"github.com/jroimartin/gocui"
@@ -9,8 +10,15 @@ import (
 
 func InputLayout(g *gocui.Gui) error {
 	w, h := g.Size()
-	v, err := g.SetView(InputView, w/2-w/4, h-int(float32(h)*InputHeightProcentage), w/2+w/4, h-1)
+	x0, y0, x1, y1 := 2, h-int(float32(h)*InputHeightProcentage), w-2, h-1
 
+	if y0 < 0 {
+		y0 = 0
+	}
+	if y1 < 0 {
+		y1 = 0
+	}
+	v, err := g.SetView(InputView, x0, y0, x1, y1)
 	if err != nil {
 		v.Editor = gocui.EditorFunc(InputEditor)
 		v.Autoscroll = false
@@ -43,7 +51,7 @@ func InputEditor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 			msg := simpleTcpMessage.NewMessage()
 			msg.AppendField(TypeName, []byte("User1"))
 			msg.AppendField(TypeText, []byte(text))
-
+			msg.AppendField(TypeTime, []byte(time.Now().Format(time.Kitchen)))
 			msgChan <- msg
 
 			v.Clear()
@@ -57,6 +65,8 @@ func InputEditor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 		v.MoveCursor(-1, 0, false)
 	case key == gocui.KeyArrowRight:
 		v.MoveCursor(1, 0, false)
+	case key == gocui.KeyEnter && mod == gocui.ModAlt:
+		v.EditNewLine()
 	case key == gocui.KeyCtrlSpace:
 		v.EditNewLine()
 	}

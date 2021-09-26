@@ -8,7 +8,7 @@ import (
 
 func ChatLayout(g *gocui.Gui) error {
 	w, h := g.Size()
-	v, err := g.SetView(ChatView, w/2-w/4, 0, w/2+w/4, int(float32(h)*ChatHeightProcentage))
+	v, err := g.SetView(ChatView, 2, 1, w-2, int(float32(h)*ChatHeightProcentage))
 
 	if err != nil {
 		v.Autoscroll = true
@@ -21,8 +21,9 @@ func ChatLayout(g *gocui.Gui) error {
 		name := string(tmp)
 		tmp, _ = msg.GetField(TypeText)
 		text := string(tmp)
-
-		v.Write([]byte(Blue + fmt.Sprintf("[%s]: ", name) + White + text + "\n"))
+		tmp, _ = msg.GetField(TypeTime)
+		time := string(tmp)
+		v.Write([]byte(Red + time + " " + Blue + fmt.Sprintf("[%s]: ", name) + White + text + "\n"))
 	default:
 		break
 	}

@@ -28,6 +28,9 @@ func main() {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
+	if err := g.SetKeybinding(ChatView, gocui.MouseWheelUp, gocui.ModNone, quit); err != nil {
+		log.Panicln(err)
+	}
 	g.SetViewOnTop(InputView)
 	g.Cursor = true
 	g.MainLoop()
