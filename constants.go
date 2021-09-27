@@ -1,19 +1,26 @@
 package main
 
 const (
-	TypeText     = 0
-	TypeFileName = 1
-	TypeFile     = 2
-	TypeDate     = 3
-	TypeName     = 4
-	TypeSys      = 5
+	TagText     = 1
+	TagFileName = 2
+	TagFile     = 3
+	TagDate     = 4
+	TagName     = 5
+	TagSys      = 6
+)
+
+const (
+	SysLoginRequest        = 1
+	MinSysLoginRequestSize = 2
+
+	SysLoginResponse = 2
+
+	SysUserLoginNotiffication = 3
+	USER_CONNECTED            = 1
+	USER_DISCONECTED          = 2
 )
 
 const (
 	LOGIN_OK  = 1
 	NAME_USED = 2
-)
-
-const (
-	LoginCode = 1
 )

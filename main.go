@@ -63,24 +63,33 @@ func main() {
 	go func() {
 		time.Sleep(time.Second * 2)
 		for {
-			select {
-			case msg := <-msgInChan:
 
-				if p, ok := msg.GetField(TypeSys); ok {
-					if p[0] == LoginCode && p[1] == LOGIN_OK {
-						curState = InputView
-						g.Update(SetFocus)
+			msg := <-msgInChan
+
+			if sysMsg, ok := msg.GetField(TagSys); ok {
+				switch {
+				case sysMsg[0] == SysLoginResponse && sysMsg[1] == LOGIN_OK:
+					curState = InputView
+					g.Update(SetFocus)
+				case sysMsg[0] == SysUserLoginNotiffication:
+					name := string(sysMsg[2:])
+					switch sysMsg[1] {
+					case USER_CONNECTED:
+						printChan <- Red + fmt.Sprintf("<%s connected>", name)
+					case USER_DISCONECTED:
+						printChan <- Red + fmt.Sprintf("<%s disconnected>", name)
 					}
-				} else {
-
-					name, _ := msg.GetField(TypeName)
-					text, _ := msg.GetField(TypeText)
-					printChan <- fmt.Sprintf("%s[%s]: %s%s", Blue, string(name), White, text)
 					g.Update(ChatLayout)
 				}
-			default:
-				runtime.Gosched()
+			} else {
+
+				name, _ := msg.GetField(TagName)
+				text, _ := msg.GetField(TagText)
+				printChan <- fmt.Sprintf("%s[%s]: %s%s", Blue, string(name), White, text)
+				g.Update(ChatLayout)
 			}
+
+			runtime.Gosched()
 		}
 
 	}()
