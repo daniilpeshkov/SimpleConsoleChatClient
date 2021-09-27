@@ -7,9 +7,10 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-func InputLayout(g *gocui.Gui) error {
+func LoginLayout(g *gocui.Gui) error {
+
 	w, h := g.Size()
-	x0, y0, x1, y1 := 2, h-int(float32(h)*InputHeightProcentage), w-2, h-1
+	x0, y0, x1, y1 := w/2-10, h/2-1, w/2+10, h/2+1
 
 	if y0 < 0 {
 		y0 = 0
@@ -17,22 +18,23 @@ func InputLayout(g *gocui.Gui) error {
 	if y1 < 0 {
 		y1 = 0
 	}
-	v, err := g.SetView(InputView, x0, y0, x1, y1)
+	v, err := g.SetView(LoginView, x0, y0, x1, y1)
 	if err != nil {
-		v.Editor = gocui.EditorFunc(InputEditor)
+		v.Editor = gocui.EditorFunc(LoginEditor)
 		v.Autoscroll = false
-		v.Title = "Input"
+		v.Title = "Login"
 		v.Editable = true
 		v.Frame = true
 		v.Overwrite = true
-		v.Wrap = true
+		v.Wrap = false
 		v.FgColor = gocui.ColorWhite
+		v.BgColor = gocui.ColorRed
 	}
 
 	return nil
 }
 
-func InputEditor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
+func LoginEditor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 	switch {
 	case ch != 0 && mod == 0:
 		v.EditWrite(ch)
@@ -45,10 +47,10 @@ func InputEditor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 	case key == gocui.KeyInsert:
 		v.Overwrite = !v.Overwrite
 	case key == gocui.KeyEnter:
-		text := strings.TrimSpace(v.Buffer())
-		if len(text) != 0 {
+		name := strings.TrimSpace(v.Buffer())
+		if len(name) != 0 {
 			msg := simpleTcpMessage.NewMessage()
-			msg.AppendField(TypeText, []byte(text))
+			msg.AppendField(TypeSys, append([]byte{LoginCode}, []byte(name)...))
 			msgOutChan <- msg
 			v.Clear()
 			v.SetCursor(0, 0)

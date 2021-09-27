@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/jroimartin/gocui"
 )
+
+var printChan = make(chan string, 100)
 
 func ChatLayout(g *gocui.Gui) error {
 	w, h := g.Size()
@@ -16,14 +16,9 @@ func ChatLayout(g *gocui.Gui) error {
 		v.Wrap = true
 	}
 	select {
-	case msg := <-msgChan:
-		tmp, _ := msg.GetField(TypeName)
-		name := string(tmp)
-		tmp, _ = msg.GetField(TypeText)
-		text := string(tmp)
-		tmp, _ = msg.GetField(TypeTime)
-		time := string(tmp)
-		v.Write([]byte(Red + time + " " + Blue + fmt.Sprintf("[%s]: ", name) + White + text + "\n"))
+	case msg := <-printChan:
+
+		v.Write([]byte(msg + "\n"))
 	default:
 		break
 	}
