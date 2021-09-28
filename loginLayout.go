@@ -50,7 +50,8 @@ func LoginEditor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 		name := strings.TrimSpace(v.Buffer())
 		if len(name) != 0 {
 			msg := simpleTcpMessage.NewMessage()
-			msg.AppendField(TagSys, append([]byte{SysLoginRequest}, []byte(name)...))
+			msg.AppendField(TagSys, []byte{SysLoginRequest})
+			msg.AppendField(TagName, []byte(name))
 			msgOutChan <- msg
 			v.Clear()
 			v.SetCursor(0, 0)

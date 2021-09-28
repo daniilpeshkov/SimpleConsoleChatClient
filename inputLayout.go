@@ -27,6 +27,8 @@ func InputLayout(g *gocui.Gui) error {
 		v.Overwrite = true
 		v.Wrap = true
 		v.FgColor = gocui.ColorWhite
+		// v.BgColor = gocui.Color
+
 	}
 
 	return nil

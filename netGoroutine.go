@@ -17,6 +17,7 @@ func netReaderGoroutine(ctx context.Context, conn *simpleTcpMessage.ClientConn, 
 
 		msg, _ := conn.RecieveMessage()
 		outChan <- msg
+		runtime.Gosched()
 	}
 }
 
@@ -27,8 +28,6 @@ func netWriterGoroutine(ctx context.Context, conn *simpleTcpMessage.ClientConn, 
 			return
 		case msg := <-inChan:
 			conn.SendMessage(msg)
-		default:
-			runtime.Gosched()
 		}
 	}
 }

@@ -6,11 +6,9 @@ import (
 	"log"
 	"net"
 	"runtime"
-	"time"
 
 	simpleTcpMessage "github.com/daniilpeshkov/go-simple-tcp-message"
 	"github.com/jroimartin/gocui"
-	"github.com/pkg/profile"
 )
 
 const (
@@ -21,8 +19,8 @@ const (
 
 var (
 	curState   = LoginView
-	msgInChan  = make(chan *simpleTcpMessage.Message)
-	msgOutChan = make(chan *simpleTcpMessage.Message)
+	msgInChan  = make(chan *simpleTcpMessage.Message, 10)
+	msgOutChan = make(chan *simpleTcpMessage.Message, 10)
 	clientConn *simpleTcpMessage.ClientConn
 	globalCtx  = context.Background()
 	cancelFunc context.CancelFunc
@@ -30,22 +28,27 @@ var (
 
 func main() {
 
-	defer profile.Start().Stop()
+	//defer profile.Start().Stop()
 
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	g, err := gocui.NewGui(gocui.Output256)
 	if err != nil {
 		log.Panicln(err)
 	}
 
 	defer g.Close()
-	g.FgColor = gocui.ColorCyan
+	g.FgColor = gocui.ColorYellow
 
 	g.SetManager(gocui.ManagerFunc(ChatLayout),
 		gocui.ManagerFunc(InputLayout),
 		gocui.ManagerFunc(SetFocus),
 		gocui.ManagerFunc(LoginLayout))
 
+	g.ASCII = false
+	// g.Highlight = true
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+		log.Panicln(err)
+	}
+	if err := g.SetKeybinding("", gocui.KeyF1, gocui.ModAlt, changeStyle); err != nil {
 		log.Panicln(err)
 	}
 	if err := g.SetKeybinding(ChatView, gocui.MouseWheelUp, gocui.ModNone, quit); err != nil {
@@ -65,11 +68,9 @@ func main() {
 	go netReaderGoroutine(ctx, clientConn, msgInChan)
 	go netWriterGoroutine(ctx, clientConn, msgOutChan)
 	go func() {
-		time.Sleep(time.Second * 2)
 		for {
 
 			msg := <-msgInChan
-
 			if sysMsg, ok := msg.GetField(TagSys); ok {
 				switch {
 				case sysMsg[0] == SysLoginResponse && sysMsg[1] == LOGIN_OK:
@@ -79,7 +80,7 @@ func main() {
 					name := string(sysMsg[2:])
 					switch sysMsg[1] {
 					case USER_CONNECTED:
-						printChan <- Red + fmt.Sprintf("<%s connected>", name)
+						printChan <- Green + fmt.Sprintf("<%s connected>", name)
 					case USER_DISCONECTED:
 						printChan <- Red + fmt.Sprintf("<%s disconnected>", name)
 					}
@@ -89,7 +90,7 @@ func main() {
 
 				name, _ := msg.GetField(TagName)
 				text, _ := msg.GetField(TagText)
-				printChan <- fmt.Sprintf("%s[%s]: %s%s", Blue, string(name), White, text)
+				printChan <- fmt.Sprintf("%s[%s]: %s%s", Yellow, string(name), White, text)
 				g.Update(ChatLayout)
 			}
 
@@ -106,6 +107,9 @@ func SetFocus(g *gocui.Gui) error {
 	} else {
 		g.SetViewOnBottom(LoginView)
 	}
+	if curState == ChatView {
+		g.SetViewOnTop(ChatView)
+	}
 	g.SetCurrentView(curState)
 	return nil
 }
@@ -113,4 +117,8 @@ func SetFocus(g *gocui.Gui) error {
 func quit(g *gocui.Gui, v *gocui.View) error {
 	cancelFunc()
 	return gocui.ErrQuit
+}
+func changeStyle(g *gocui.Gui, v *gocui.View) error {
+	g.ASCII = !g.ASCII
+	return nil
 }
