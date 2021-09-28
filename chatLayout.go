@@ -4,7 +4,7 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-var printChan = make(chan string, 100)
+var printChan = make(chan string, 10)
 
 func ChatLayout(g *gocui.Gui) error {
 	w, h := g.Size()

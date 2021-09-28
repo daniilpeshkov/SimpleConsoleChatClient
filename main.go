@@ -10,6 +10,7 @@ import (
 
 	simpleTcpMessage "github.com/daniilpeshkov/go-simple-tcp-message"
 	"github.com/jroimartin/gocui"
+	"github.com/pkg/profile"
 )
 
 const (
@@ -20,14 +21,17 @@ const (
 
 var (
 	curState   = LoginView
-	msgInChan  = make(chan *simpleTcpMessage.Message, 100)
-	msgOutChan = make(chan *simpleTcpMessage.Message, 100)
+	msgInChan  = make(chan *simpleTcpMessage.Message)
+	msgOutChan = make(chan *simpleTcpMessage.Message)
 	clientConn *simpleTcpMessage.ClientConn
 	globalCtx  = context.Background()
 	cancelFunc context.CancelFunc
 )
 
 func main() {
+
+	defer profile.Start().Stop()
+
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)

@@ -17,7 +17,6 @@ func netReaderGoroutine(ctx context.Context, conn *simpleTcpMessage.ClientConn, 
 
 		msg, _ := conn.RecieveMessage()
 		outChan <- msg
-		runtime.Gosched()
 	}
 }
 
