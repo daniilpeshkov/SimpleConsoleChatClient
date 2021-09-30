@@ -50,7 +50,8 @@ func InputEditor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 		text := strings.TrimSpace(v.Buffer())
 		if len(text) != 0 {
 			msg := simpleTcpMessage.NewMessage()
-			msg.AppendField(TagText, []byte(text))
+			msg.AppendField(TagSys, []byte{SysMessage})
+			msg.AppendField(TagMessage, []byte(text))
 			msgOutChan <- msg
 			v.Clear()
 			v.SetCursor(0, 0)

@@ -28,6 +28,11 @@ func netWriterGoroutine(ctx context.Context, conn *simpleTcpMessage.ClientConn, 
 			return
 		case msg := <-inChan:
 			conn.SendMessage(msg)
+			sys, _ := msg.GetField(TagSys)
+			if sys[0] == SysMessage {
+				text, _ := msg.GetField(TagMessage)
+				unconfirmedMsgChan <- string(text)
+			}
 		}
 	}
 }

@@ -47,11 +47,11 @@ func LoginEditor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
 	case key == gocui.KeyInsert:
 		v.Overwrite = !v.Overwrite
 	case key == gocui.KeyEnter:
-		name := strings.TrimSpace(v.Buffer())
-		if len(name) != 0 {
+		myName = strings.TrimSpace(v.Buffer())
+		if len(myName) != 0 {
 			msg := simpleTcpMessage.NewMessage()
 			msg.AppendField(TagSys, []byte{SysLoginRequest})
-			msg.AppendField(TagName, []byte(name))
+			msg.AppendField(TagName, []byte(myName))
 			msgOutChan <- msg
 			v.Clear()
 			v.SetCursor(0, 0)
