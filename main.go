@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	ChatView  = "chat"
-	InputView = "input"
-	LoginView = "login"
+	ChatView       = "chat"
+	InputView      = "input"
+	LoginView      = "login"
+	FileDialogView = "file"
 )
 
 var (
@@ -44,7 +45,8 @@ func main() {
 	g.SetManager(gocui.ManagerFunc(ChatLayout),
 		gocui.ManagerFunc(InputLayout),
 		gocui.ManagerFunc(SetFocus),
-		gocui.ManagerFunc(LoginLayout))
+		gocui.ManagerFunc(LoginLayout),
+		gocui.ManagerFunc(FileDialogLayout))
 
 	g.ASCII = false
 	// g.Highlight = true
@@ -54,7 +56,7 @@ func main() {
 	if err := g.SetKeybinding("", gocui.KeyF1, gocui.ModAlt, changeStyle); err != nil {
 		log.Panicln(err)
 	}
-	if err := g.SetKeybinding(ChatView, gocui.MouseWheelUp, gocui.ModNone, quit); err != nil {
+	if err := g.SetKeybinding("", gocui.KeyCtrlF, gocui.ModNone, openFileDialog); err != nil {
 		log.Panicln(err)
 	}
 	g.Cursor = true
@@ -126,6 +128,12 @@ func SetFocus(g *gocui.Gui) error {
 	} else {
 		g.SetViewOnBottom(LoginView)
 	}
+	if curState == FileDialogView {
+		g.SetViewOnTop(FileDialogView)
+	} else {
+		g.SetViewOnBottom(FileDialogView)
+	}
+
 	if curState == ChatView {
 		g.SetViewOnTop(ChatView)
 	}
@@ -139,5 +147,16 @@ func quit(g *gocui.Gui, v *gocui.View) error {
 }
 func changeStyle(g *gocui.Gui, v *gocui.View) error {
 	g.ASCII = !g.ASCII
+	return nil
+}
+func openFileDialog(g *gocui.Gui, v *gocui.View) error {
+	if curState == InputView {
+		curState = FileDialogView
+		g.Update(SetFocus)
+		// g.Update(FileDialogLayout)
+	} else if curState == FileDialogView {
+		curState = InputView
+		g.Update(SetFocus)
+	}
 	return nil
 }
