@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"runtime"
+	"time"
 
 	simpleTcpMessage "github.com/daniilpeshkov/go-simple-tcp-message"
 	"github.com/jroimartin/gocui"
@@ -74,11 +75,18 @@ func main() {
 		for {
 
 			msg := <-msgInChan
+
+			timeB, _ := msg.GetField(TagTime)
+			msgTime := new(time.Time)
+			msgTime.UnmarshalBinary(timeB)
+			localMsgTime := msgTime.Local()
+			timeFmt := Cyan + localMsgTime.Format(time.RFC822) + ": "
+
 			if sysMsg, ok := msg.GetField(TagSys); ok {
 				switch {
 				case sysMsg[0] == SysLoginRequest && sysMsg[1] == LOGIN_OK:
 					curState = InputView
-					printChan <- Green + "<connected>"
+					printChan <- timeFmt + Green + "<connected>"
 					g.Update(SetFocus)
 				case sysMsg[0] == SysUserLoginNotiffication:
 					nameB, _ := msg.GetField(TagName)
@@ -86,21 +94,21 @@ func main() {
 
 					switch sysMsg[1] {
 					case USER_CONNECTED:
-						printChan <- Green + fmt.Sprintf("<%s connected>", name)
+						printChan <- timeFmt + Green + fmt.Sprintf("<%s connected>", name)
 					case USER_DISCONECTED:
-						printChan <- Red + fmt.Sprintf("<%s disconnected>", name)
+						printChan <- timeFmt + Red + fmt.Sprintf("<%s disconnected>", name)
 					}
 					g.Update(ChatLayout)
 				case sysMsg[0] == SysMessage:
 					if len(sysMsg) == 1 { //other message
 						name, _ := msg.GetField(TagName)
 						text, _ := msg.GetField(TagMessage)
-						printChan <- fmt.Sprintf("%s[%s]: %s%s", Yellow, string(name), White, text)
+						printChan <- timeFmt + fmt.Sprintf("%s[%s]: %s%s", Yellow, string(name), White, text)
 						g.Update(ChatLayout)
 					} else { //confirmed message
 						if sysMsg[1] == MESSAGE_SENT {
 							text := <-unconfirmedMsgChan
-							printChan <- fmt.Sprintf("%s[%s]: %s%s", Yellow, string(myName), White, text)
+							printChan <- timeFmt + fmt.Sprintf("%s[%s]: %s%s", Yellow, string(myName), White, text)
 							g.Update(ChatLayout)
 						}
 					}
