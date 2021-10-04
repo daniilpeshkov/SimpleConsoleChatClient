@@ -1,6 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"io"
+	"os"
+	"strings"
+
+	simpleTcpMessage "github.com/daniilpeshkov/go-simple-tcp-message"
 	"github.com/jroimartin/gocui"
 )
 
@@ -44,15 +50,24 @@ func fileDialogEditor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier)
 	case key == gocui.KeyInsert:
 		v.Overwrite = !v.Overwrite
 	case key == gocui.KeyEnter:
-		// myName = strings.TrimSpace(v.Buffer())
-		// if len(myName) != 0 {
-		// 	msg := simpleTcpMessage.NewMessage()
-		// 	msg.AppendField(TagSys, []byte{SysLoginRequest})
-		// 	msg.AppendField(TagName, []byte(myName))
-		// 	msgOutChan <- msg
-		// 	v.Clear()
-		// 	v.SetCursor(0, 0)
-		// }
+		filePath := v.Buffer()
+		filePath = strings.Trim(filePath, " \n\x00")
+		file, err := os.Open(filePath)
+		if err != nil {
+			printChan <- Red + fmt.Sprintf("file %s doesn't exist", filePath)
+		} else {
+			msg := simpleTcpMessage.NewMessage()
+			fileCont, _ := io.ReadAll(file)
+			msg.AppendField(TagSys, []byte{SysFile})
+			msg.AppendField(TagFile, fileCont)
+			msg.AppendField(TagFileName, []byte(file.Name()))
+			printChan <- "sending " + file.Name() + " " + fmt.Sprint(len(fileCont))
+			unconfirmedFileChan <- file.Name()
+			msgOutChan <- msg
+			v.Clear()
+			v.SetCursor(0, 0)
+		}
+		curState = InputView
 	case key == gocui.KeyArrowDown:
 		v.MoveCursor(0, 1, false)
 	case key == gocui.KeyArrowUp:

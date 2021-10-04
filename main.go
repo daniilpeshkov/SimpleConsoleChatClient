@@ -20,14 +20,15 @@ const (
 )
 
 var (
-	curState           = LoginView
-	msgInChan          = make(chan *simpleTcpMessage.Message, 10)
-	msgOutChan         = make(chan *simpleTcpMessage.Message, 10)
-	myName             string
-	unconfirmedMsgChan = make(chan string, 10)
-	clientConn         *simpleTcpMessage.ClientConn
-	globalCtx          = context.Background()
-	cancelFunc         context.CancelFunc
+	curState            = LoginView
+	msgInChan           = make(chan *simpleTcpMessage.Message, 10)
+	msgOutChan          = make(chan *simpleTcpMessage.Message, 10)
+	myName              string
+	unconfirmedMsgChan  = make(chan string, 10)
+	unconfirmedFileChan = make(chan string, 10)
+	clientConn          *simpleTcpMessage.ClientConn
+	globalCtx           = context.Background()
+	cancelFunc          context.CancelFunc
 )
 
 func main() {
@@ -83,41 +84,53 @@ func main() {
 			msgTime.UnmarshalBinary(timeB)
 			localMsgTime := msgTime.Local()
 			timeFmt := Cyan + localMsgTime.Format(time.RFC822) + ": "
+			sysMsg, _ := msg.GetField(TagSys)
+			nameB, _ := msg.GetField(TagName)
+			name := string(nameB)
 
-			if sysMsg, ok := msg.GetField(TagSys); ok {
-				switch {
-				case sysMsg[0] == SysLoginRequest && sysMsg[1] == LOGIN_OK:
-					curState = InputView
-					printChan <- timeFmt + Green + "<connected>"
-					g.Update(SetFocus)
-				case sysMsg[0] == SysUserLoginNotiffication:
-					nameB, _ := msg.GetField(TagName)
-					name := string(nameB)
-
-					switch sysMsg[1] {
-					case USER_CONNECTED:
-						printChan <- timeFmt + Green + fmt.Sprintf("<%s connected>", name)
-					case USER_DISCONECTED:
-						printChan <- timeFmt + Red + fmt.Sprintf("<%s disconnected>", name)
-					}
+			switch {
+			case sysMsg[0] == SysLoginRequest && sysMsg[1] == LOGIN_OK:
+				curState = InputView
+				printChan <- timeFmt + Green + "<connected>"
+				g.Update(SetFocus)
+			case sysMsg[0] == SysUserLoginNotiffication:
+				switch sysMsg[1] {
+				case USER_CONNECTED:
+					printChan <- timeFmt + Green + fmt.Sprintf("<%s connected>", name)
+				case USER_DISCONECTED:
+					printChan <- timeFmt + Red + fmt.Sprintf("<%s disconnected>", name)
+				}
+				g.Update(ChatLayout)
+			case sysMsg[0] == SysMessage:
+				if len(sysMsg) == 1 { //other message
+					text, _ := msg.GetField(TagMessage)
+					printChan <- timeFmt + fmt.Sprintf("%s[%s]: %s%s", Yellow, string(name), White, text)
 					g.Update(ChatLayout)
-				case sysMsg[0] == SysMessage:
-					if len(sysMsg) == 1 { //other message
-						name, _ := msg.GetField(TagName)
-						text, _ := msg.GetField(TagMessage)
-						printChan <- timeFmt + fmt.Sprintf("%s[%s]: %s%s", Yellow, string(name), White, text)
+				} else { //confirmed message
+					if sysMsg[1] == MESSAGE_SENT {
+						text := <-unconfirmedMsgChan
+						printChan <- timeFmt + fmt.Sprintf("%s[%s]: %s%s", Yellow, string(myName), White, text)
 						g.Update(ChatLayout)
-					} else { //confirmed message
-						if sysMsg[1] == MESSAGE_SENT {
-							text := <-unconfirmedMsgChan
-							printChan <- timeFmt + fmt.Sprintf("%s[%s]: %s%s", Yellow, string(myName), White, text)
-							g.Update(ChatLayout)
-						}
 					}
 				}
-				runtime.Gosched()
+			case sysMsg[0] == SysFile:
+				if len(sysMsg) == 1 {
+					fileNameB, _ := msg.GetField(TagFileName)
+					fileContB, _ := msg.GetField(TagFile)
+					fileName := string(fileNameB)
+					printChan <- name + " sent file " + fileName + " " + fmt.Sprint(len(fileContB))
+					g.Update(ChatLayout)
+				} else { //confirmed message
+					if sysMsg[1] == MESSAGE_SENT {
+						fileName := <-unconfirmedFileChan
+						printChan <- fmt.Sprintf("%s%s file %s sent", timeFmt, Yellow, fileName)
+						g.Update(ChatLayout)
+					}
+				}
 			}
+			runtime.Gosched()
 		}
+
 	}()
 	g.MainLoop()
 }
