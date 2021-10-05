@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"runtime"
+	"syscall"
 	"time"
 
 	simpleTcpMessage "github.com/daniilpeshkov/go-simple-tcp-message"
@@ -87,7 +89,6 @@ func main() {
 			sysMsg, _ := msg.GetField(TagSys)
 			nameB, _ := msg.GetField(TagName)
 			name := string(nameB)
-
 			switch {
 			case sysMsg[0] == SysLoginRequest && sysMsg[1] == LOGIN_OK:
 				curState = InputView
@@ -109,7 +110,7 @@ func main() {
 				} else { //confirmed message
 					if sysMsg[1] == MESSAGE_SENT {
 						text := <-unconfirmedMsgChan
-						printChan <- timeFmt + fmt.Sprintf("%s[%s]: %s%s", Yellow, string(myName), White, text)
+						printChan <- timeFmt + fmt.Sprintf("%s[%s]: %s%s", Yellow, string(name), White, text)
 						g.Update(ChatLayout)
 					}
 				}
@@ -117,13 +118,16 @@ func main() {
 				if len(sysMsg) == 1 {
 					fileNameB, _ := msg.GetField(TagFileName)
 					fileContB, _ := msg.GetField(TagFile)
+
 					fileName := string(fileNameB)
-					printChan <- name + " sent file " + fileName + " " + fmt.Sprint(len(fileContB))
+					os.WriteFile("./"+fileName, fileContB, syscall.O_CREAT|syscall.O_EXCL)
+					printChan <- timeFmt + fmt.Sprintf("%s[%s]: %ssent file %s", Yellow, string(myName), Blue, fileName)
 					g.Update(ChatLayout)
 				} else { //confirmed message
-					if sysMsg[1] == MESSAGE_SENT {
+
+					if sysMsg[1] == FILE_SENT {
 						fileName := <-unconfirmedFileChan
-						printChan <- fmt.Sprintf("%s%s file %s sent", timeFmt, Yellow, fileName)
+						printChan <- fmt.Sprintf("%s%s%s sent", timeFmt, Yellow, fileName)
 						g.Update(ChatLayout)
 					}
 				}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	simpleTcpMessage "github.com/daniilpeshkov/go-simple-tcp-message"
@@ -60,12 +61,14 @@ func fileDialogEditor(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier)
 			fileCont, _ := io.ReadAll(file)
 			msg.AppendField(TagSys, []byte{SysFile})
 			msg.AppendField(TagFile, fileCont)
-			msg.AppendField(TagFileName, []byte(file.Name()))
-			printChan <- "sending " + file.Name() + " " + fmt.Sprint(len(fileCont))
-			unconfirmedFileChan <- file.Name()
+			msg.AppendField(TagFileName, []byte(filepath.Base(filePath)))
+
+			printChan <- Blue + "sending " + filepath.Base(filePath)
+			unconfirmedFileChan <- filepath.Base(filePath)
 			msgOutChan <- msg
 			v.Clear()
 			v.SetCursor(0, 0)
+			file.Close()
 		}
 		curState = InputView
 	case key == gocui.KeyArrowDown:
