@@ -65,7 +65,8 @@ func main() {
 	g.Cursor = true
 	//
 	// conn, err := net.Dial("tcp", "127.0.0.1:25565")
-	conn, err := net.Dial("tcp", "185.24.53.156:25565")
+	// conn, err := net.Dial("tcp", "185.24.53.156:25565")
+	conn, err := net.Dial("tcp", "192.168.1.45:25565")
 	if err != nil {
 		log.Panicln("Server inaccessible")
 	}
