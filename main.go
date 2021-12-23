@@ -95,6 +95,7 @@ func main() {
 				curState = InputView
 				printChan <- timeFmt + Green + "<connected>"
 				g.Update(SetFocus)
+				break
 			case sysMsg[0] == SysUserLoginNotiffication:
 				switch sysMsg[1] {
 				case USER_CONNECTED:
@@ -111,7 +112,7 @@ func main() {
 				} else { //confirmed message
 					if sysMsg[1] == MESSAGE_SENT {
 						text := <-unconfirmedMsgChan
-						printChan <- timeFmt + fmt.Sprintf("%s[%s]: %s%s", Yellow, string(name), White, text)
+						printChan <- timeFmt + fmt.Sprintf("%s[%s]: %s%s", Yellow, string(myName), White, text)
 						g.Update(ChatLayout)
 					}
 				}
